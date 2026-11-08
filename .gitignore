@@ -1,0 +1,33 @@
+# Secrets & Credentials
+.env
+**/.env
+.env.*
+!.env.example
+
+# WhatsApp Baileys Auth Session
+**/auth_info_baileys/
+**/auth_info_baileys_2/
+auth_info_baileys/
+auth_info_baileys_2/
+
+# Dependencies
+**/node_modules/
+node_modules/
+**/venv/
+venv/
+
+# Python Cache
+**/__pycache__/
+__pycache__/
+*.pyc
+
+# Logs & Storage files
+*.log
+**/*.log
+storage/sessions.json
+storage/verified_users.json
+storage/scheduled_tasks.json
+storage/*.png
+storage/*.pdf
+storage/*.docx
+storage/*.txt

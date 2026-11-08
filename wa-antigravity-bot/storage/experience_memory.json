@@ -1,0 +1,43 @@
+{
+  "laptop_profile": {
+    "device_name": "codespace-vps",
+    "environment": "Linux Cloud VPS (Ubuntu 22.04 LTS on Azure / GitHub Codespaces)",
+    "os": "Linux Ubuntu 22.04 LTS (x86_64)",
+    "processor": "x86_64 Cloud Virtual CPU (2 Cores)",
+    "ram_total": "8.0 GB",
+    "disk_total": "32.0 GB SSD",
+    "user_home": "/home/codespace",
+    "workspaces": "/workspaces/tab-html/wa-antigravity-bot",
+    "root_access": "Full Passwordless Sudo (Unrestricted Linux Access)",
+    "initialized_at": "2026-11-08 00:58:00"
+  },
+  "learned_experiences": [
+    {
+      "content": "Lingkungan Sistem: Bot beroperasi di Linux Cloud VPS Ubuntu x86_64 dengan akses root sudo penuh tanpa batasan, bukan di laptop Windows fisik.",
+      "learned_at": "08-11-2026 00:58",
+      "source": "user_instruction"
+    },
+    {
+      "content": "Gaya komunikasi: Jangan berbicara kaku atau sok pintar. Bersikap santai, luwes, bersahabat, to-the-point, dan sadar diri sebagai AI agen di Cloud VPS Linux.",
+      "learned_at": "08-11-2026 00:58",
+      "source": "user_preference"
+    },
+    {
+      "content": "Akses Sistem Linux: Pemilik bot (Ferdi) memberikan akses penuh tanpa batasan ke sistem Linux untuk eksekusi perintah terminal Bash, pengelolaan berkas, instalasi software, dan manajemen server.",
+      "learned_at": "08-11-2026 00:58",
+      "source": "user_instruction"
+    },
+    {
+      "content": "Keamanan Kontak & Grup: Kontak atau grup yang belum memasukkan kode keamanan RajaWali0108 dilarang keras dibalas (silent ignore).",
+      "learned_at": "08-11-2026 00:58",
+      "source": "user_instruction"
+    },
+    {
+      "content": "Format jawaban: Pengguna lebih suka laporan dan penjelasan diringkas to-the-point dalam bentuk poin-poin singkat.",
+      "learned_at": "08-11-2026 00:58",
+      "source": "user_preference"
+    }
+  ],
+  "user_preferences": {},
+  "custom_notes": []
+}
