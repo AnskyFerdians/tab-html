@@ -41,19 +41,16 @@ def lock_screen() -> str:
 def shutdown_laptop(forced: bool = False, timer_seconds: int = 0) -> str:
     """Shuts down the laptop or VPS server. Use forced=True to force-close all apps."""
     try:
-        if platform.system() == "Windows":
-            cmd = ["shutdown", "/s"]
-            if forced:
-                cmd.append("/f")
-            cmd.extend(["/t", str(timer_seconds)])
-        else:
-            if timer_seconds > 0:
-                mins = max(1, timer_seconds // 60)
-                cmd = ["sudo", "shutdown", "-h", f"+{mins}"]
-            else:
-                cmd = ["sudo", "shutdown", "-h", "now"]
+        if platform.system() != "Windows":
+            return (
+                "⚠️ *Perintah Shutdown Ditolak di Server VPS!*\n"
+                "ℹ️ _Bot saat ini berjalan di Cloud VPS Linux. Perintah shutdown fisik laptop dimatikan demi keamanan agar server bot tetap online 24 jam._"
+            )
 
-        subprocess.Popen(cmd, shell=False)
+        cmd = ["shutdown", "/s"]
+        if forced:
+            cmd.append("/f")
+        cmd.extend(["/t", str(timer_seconds)])
 
         subprocess.Popen(cmd, shell=False)
 
@@ -81,6 +78,12 @@ def shutdown_laptop(forced: bool = False, timer_seconds: int = 0) -> str:
 def restart_laptop(forced: bool = False) -> str:
     """Restarts the laptop."""
     try:
+        if platform.system() != "Windows":
+            return (
+                "⚠️ *Perintah Restart Ditolak di Server VPS!*\n"
+                "ℹ️ _Bot saat ini berjalan di Cloud VPS Linux. Restart hanya dapat dilakukan oleh admin secara manual via terminal._"
+            )
+
         cmd = ["shutdown", "/r", "/t", "5"]
         if forced:
             cmd.append("/f")
