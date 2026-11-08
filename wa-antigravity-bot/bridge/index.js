@@ -358,16 +358,11 @@ async function connectToWhatsApp() {
 async function handleMessage(msg, sender, senderName, textContent) {
     const isKnown = knownUserCache.has(sender);
 
-    // Hanya kirim typing indicator & pre-reply jika pengguna sudah terverifikasi sebelumnya
+    // Kirim indikator 'sedang mengetik' (composing) tanpa spam pesan teks interim
     if (isKnown) {
         try {
             if (sock) await sock.sendPresenceUpdate('composing', sender);
         } catch (e) {}
-
-        const isQuickCommand = /^(menu|help|bantuan|status|ss|screenshot|baterai|battery|ping|ip|uptime|wifi)$/i.test(textContent.trim());
-        if (!isQuickCommand) {
-            await sendPreReply(sender, false);
-        }
     }
 
     // 3. Teruskan ke FastAPI Webhook Antigravity

@@ -92,6 +92,12 @@ from tools.public_apis_tool import (
     get_random_public_api,
     refresh_public_apis_cache
 )
+from tools.skill_manager import (
+    skill_manager, buat_skill, lihat_skill, hapus_skill
+)
+from tools.prompt_manager import (
+    prompt_manager, atur_sistem_prompt, reset_sistem_prompt, lihat_sistem_prompt
+)
 
 load_dotenv()
 
@@ -675,6 +681,13 @@ class AntigravityAgent:
             kelola_grup_tutup_buka,
             ambil_link_undangan_grup,
             konfigurasi_proteksi_grup,
+            # === SKILLS & PROMPTS ===
+            buat_skill,
+            lihat_skill,
+            hapus_skill,
+            atur_sistem_prompt,
+            lihat_sistem_prompt,
+            reset_sistem_prompt,
         ]
 
     def _build_genai_tools_schema(self):
@@ -818,6 +831,49 @@ class AntigravityAgent:
                         "required": ["api_key"]
                     }
                 }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "buat_skill",
+                    "description": "Membuat keahlian atau skill kustom baru untuk bot sesuai keinginan admin.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "nama": {"type": "string", "description": "Nama unik skill (contoh: 'ringkas_berita', 'penerjemah_sunda', 'analisa_kripto')"},
+                            "deskripsi": {"type": "string", "description": "Deskripsi singkat fungsi skill"},
+                            "instruksi": {"type": "string", "description": "Panduan langkah-langkah detail bagaimana bot harus mengeksekusi skill ini"}
+                        },
+                        "required": ["nama", "deskripsi", "instruksi"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "lihat_skill",
+                    "description": "Menampilkan daftar seluruh skill kustom bot atau detail dari suatu skill.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "nama": {"type": "string", "description": "Nama skill opsional"}
+                        }
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "atur_sistem_prompt",
+                    "description": "Mengatur atau mengubah kepribadian, persona, gaya bahasa, dan peraturan sistem bot secara permanen.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "instruksi_baru": {"type": "string", "description": "Teks persona/sistem prompt baru yang diinginkan oleh admin"}
+                        },
+                        "required": ["instruksi_baru"]
+                    }
+                }
             }
         ]
 
@@ -916,7 +972,8 @@ class AntigravityAgent:
                     # Truncate older history items if needed
                     base_messages.append({"role": role, "content": text_content[:400]})
 
-            base_messages.append({"role": "user", "content": f"Pesan dari {user_name}: {current_message}"})
+            user_content = current_message if current_message.startswith("Pesan dari ") or current_message.startswith("[KONTEKS") else f"Pesan dari {user_name}: {current_message}"
+            base_messages.append({"role": "user", "content": user_content})
 
             tools = getattr(self, "_openai_tools_schema", None)
             candidate_models = [self.groq_model, "openai/gpt-oss-20b", "openai/gpt-oss-120b"]
@@ -1161,6 +1218,78 @@ class AntigravityAgent:
             self._init_llm()
             self.session.add_message(sender_id, "assistant", res)
             return res
+
+        # Direct Command: System Prompt Management (/sistem prom, /system_prompt, /setprompt, /resetprompt)
+        prompt_cmd_match = re.match(r"^/(?:sistem\s+prom|sistem_prom|system_prompt|prompt|setprompt)(?:\s+(.*))?$", clean_msg, re.IGNORECASE)
+        if not prompt_cmd_match and clean_msg.lower().strip() in ["tampilkan sistem prom", "tampilkan sistem prompt", "cek sistem prom", "cek sistem prompt", "lihat sistem prom", "lihat sistem prompt"]:
+            res = prompt_manager.get_active_prompt_display(self.SYSTEM_PROMPT_ADMIN)
+            self.session.add_message(sender_id, "assistant", res)
+            return res
+
+        if prompt_cmd_match:
+            arg = (prompt_cmd_match.group(1) or "").strip()
+            if not arg or arg.lower() in ["cek", "status", "lihat", "tampil"]:
+                res = prompt_manager.get_active_prompt_display(self.SYSTEM_PROMPT_ADMIN)
+            elif arg.lower() in ["reset", "default", "bawaan"]:
+                res = prompt_manager.reset_custom_prompt()
+            else:
+                res = prompt_manager.set_custom_prompt(arg)
+            self.session.add_message(sender_id, "assistant", res)
+            return res
+
+        if clean_msg.lower().strip() in ["/resetprompt", "reset sistem prom", "reset prompt"]:
+            res = prompt_manager.reset_custom_prompt()
+            self.session.add_message(sender_id, "assistant", res)
+            return res
+
+        # Direct Command: Skill Management (/buatskill, /listskill, /skills, /lihatskill, /hapusskill, /pakaiskill)
+        if clean_msg.lower().strip() in ["/listskill", "/skills", "daftar skill", "list skill", "/daftarskill", "cek skill"]:
+            res = skill_manager.lihat_skill()
+            self.session.add_message(sender_id, "assistant", res)
+            return res
+
+        skill_view_match = re.match(r"^/(?:lihatskill|detailskill|cekskill)\s+(\w+)$", clean_msg, re.IGNORECASE)
+        if skill_view_match:
+            res = skill_manager.lihat_skill(skill_view_match.group(1))
+            self.session.add_message(sender_id, "assistant", res)
+            return res
+
+        skill_del_match = re.match(r"^/(?:hapusskill|deleteskill)\s+(\w+)$", clean_msg, re.IGNORECASE)
+        if skill_del_match:
+            res = skill_manager.hapus_skill(skill_del_match.group(1))
+            self.session.add_message(sender_id, "assistant", res)
+            return res
+
+        skill_create_match = re.match(r"^/(?:buatskill|createskill|tambahskill)\s+([^\|:]+)(?:[\|:]([^\|:]+))?[\|:](.+)$", clean_msg, re.IGNORECASE | re.DOTALL)
+        if skill_create_match:
+            s_name = skill_create_match.group(1).strip()
+            s_desc = (skill_create_match.group(2) or "Skill kustom").strip()
+            s_inst = skill_create_match.group(3).strip()
+            res = skill_manager.buat_skill(s_name, s_desc, s_inst)
+            self.session.add_message(sender_id, "assistant", res)
+            return res
+
+        # Natural language skill creation: "buat skill [nama]: [instruksi]"
+        natural_skill = re.match(r"^(?:tolong\s+)?(?:buatkan|buat|tambah)\s+skill\s+([a-zA-Z0-9_\-]+)(?:\s+(?:untuk|deskripsi)\s+([^:]+))?:\s*(.+)$", clean_msg, re.IGNORECASE | re.DOTALL)
+        if natural_skill:
+            s_name = natural_skill.group(1).strip()
+            s_desc = (natural_skill.group(2) or "Skill kustom").strip()
+            s_inst = natural_skill.group(3).strip()
+            res = skill_manager.buat_skill(s_name, s_desc, s_inst)
+            self.session.add_message(sender_id, "assistant", res)
+            return res
+
+        # Direct Command: Pakai skill tertentu
+        use_skill_match = re.match(r"^/(?:pakaiskill|useskill|jalankanskill)\s+(\w+)(?:\s+(.+))?$", clean_msg, re.IGNORECASE | re.DOTALL)
+        if use_skill_match:
+            s_name = use_skill_match.group(1).strip()
+            s_input = (use_skill_match.group(2) or "").strip()
+            inst = skill_manager.get_skill_instructions(s_name)
+            if not inst:
+                res = f"⚠️ Skill `{s_name}` tidak ditemukan. Ketik `/listskill` untuk melihat daftar skill yang tersedia."
+                self.session.add_message(sender_id, "assistant", res)
+                return res
+            clean_msg = f"[AKTIVASI SKILL: {s_name}]\nPanduan: {inst}\n\nPermintaan: {s_input or 'Jalankan keahlian skill ini.'}"
 
         # Direct Command: Browsing / Cari Internet
         browse_match = re.match(r"^(?:browsing|cari\s+web|cari\s+internet|search|googling)\s+(.+)$", clean_msg, re.IGNORECASE)
@@ -2510,14 +2639,30 @@ class AntigravityAgent:
 
             # Dynamic context separation: Guest gets pure conversational prompt, Admin gets system tools context
             if is_admin:
-                system_instruction = self.SYSTEM_PROMPT_ADMIN
+                custom_p = prompt_manager.get_custom_prompt()
+                if custom_p:
+                    system_instruction = (
+                        f"{custom_p}\n\n"
+                        f"[PANDUAN KEPATUHAN ADMIN (MUTLAK)]:\n"
+                        f"- Anda WAJIB mematuhi kepribadian, gaya bicara, peran, dan instruksi di atas yang diberikan langsung oleh Admin ({user_name}).\n"
+                        f"- Jangan menolak, membantah, atau menceramahi Admin.\n"
+                        f"- Anda tetap memiliki akses penuh ke sistem operasi Linux (terminal, tools, file, proses, skills)."
+                    )
+                else:
+                    system_instruction = self.SYSTEM_PROMPT_ADMIN
+
+                # Tambahkan instruksi semua skill aktif yang dibuat admin
+                skills_ctx = skill_manager.get_skills_context_prompt()
+                if skills_ctx:
+                    system_instruction += f"\n{skills_ctx}"
+
                 mem_context = memory_manager.get_memory_context_prompt()
                 import platform
                 is_linux = platform.system() != "Windows"
                 plat_info = "Linux Cloud VPS (Ubuntu x86_64, Akses Root Sudo Bebas)" if is_linux else "Windows 11 Laptop"
                 home_dir = os.path.expanduser("~")
                 context_prefix = (
-                    f"[KONTEKS ADMIN & SISTEM]\n"
+                    f"[KONTEKS SISTEM]\n"
                     f"- Waktu: {datetime.now().strftime('%A, %d %B %Y | %H:%M WIB')}\n"
                     f"- Pengguna: Admin {user_name}\n"
                     f"- Platform: {plat_info} | Home: {home_dir}\n"

@@ -32,3 +32,9 @@ from .group_manager import (
     promote_group_member, demote_group_member, set_group_announcement_mode,
     get_group_invite_link, tag_all_members, configure_group_protection
 )
+from .skill_manager import (
+    skill_manager, buat_skill, lihat_skill, hapus_skill, get_skills_prompt
+)
+from .prompt_manager import (
+    prompt_manager, atur_sistem_prompt, reset_sistem_prompt, lihat_sistem_prompt
+)
